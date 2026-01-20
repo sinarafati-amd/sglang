@@ -266,3 +266,12 @@ python/sglang/_version.py
 python/sglang/srt/grpc/*_pb2.py
 python/sglang/srt/grpc/*_pb2_grpc.py
 python/sglang/srt/grpc/*_pb2.pyi
+
+# Local documentation files (kept locally, not in repo)
+python/sglang/srt/layers/moe/fused_moe_triton/optimized/DEPLOYMENT_GUIDE_GFX950.md
+python/sglang/srt/layers/moe/fused_moe_triton/optimized/PERFORMANCE_REPORT.md
+python/sglang/srt/layers/moe/fused_moe_triton/optimized/QUICKSTART_GFX950.md
+python/sglang/srt/layers/moe/fused_moe_triton/optimized/README.md
+python/sglang/srt/layers/moe/fused_moe_triton/optimized/SPEEDUP_SUMMARY.md
+GFX950_USER_GUIDE.md
+QUICK_REFERENCE_GFX950.txt
