@@ -40,6 +40,7 @@ _is_cuda = is_cuda()
 _is_cpu_amx_available = cpu_has_amx_support()
 _is_cpu = is_cpu()
 _use_aiter = get_bool_env_var("SGLANG_USE_AITER") and _is_hip
+_use_optimized_moe = get_bool_env_var("SGLANG_USE_OPTIMIZED_MOE") and _is_hip
 
 if _is_cuda:
     from sgl_kernel import gelu_and_mul, moe_sum_reduce, silu_and_mul
@@ -320,6 +321,42 @@ def fused_experts_impl(
     gemm1_limit: Optional[float] = None,
     filter_expert: bool = True,
 ):
+    # Check if optimized MOE kernel should be used (AMD MI300X/MI350 only)
+    # Enable with SGLANG_USE_OPTIMIZED_MOE=1
+    # Supports: FP8 (e4m3fnuz), BF16, FP16 with gated activation
+    if _use_optimized_moe and is_gated and not use_int8_w8a8 and not use_int8_w8a16 and not use_int4_w4a16:
+        try:
+            from .optimized import use_optimized_moe_kernel
+            if use_optimized_moe_kernel():
+                from .optimized.fused_moe_optimized import fused_experts_optimized
+                return fused_experts_optimized(
+                    hidden_states=hidden_states,
+                    w1=w1,
+                    w2=w2,
+                    topk_weights=topk_weights,
+                    topk_ids=topk_ids,
+                    b1=b1,
+                    b2=b2,
+                    inplace=inplace,
+                    activation=activation,
+                    apply_router_weight_on_input=apply_router_weight_on_input,
+                    use_fp8_w8a8=use_fp8_w8a8,
+                    use_fp4_w4a8=False,
+                    per_channel_quant=per_channel_quant,
+                    w1_scale=w1_scale,
+                    w2_scale=w2_scale,
+                    a1_scale=a1_scale,
+                    a2_scale=a2_scale,
+                    block_shape=block_shape,
+                    no_combine=no_combine,
+                    routed_scaling_factor=routed_scaling_factor,
+                    filter_expert=filter_expert,
+                )
+        except (ImportError, Exception) as e:
+            # Fall back to baseline kernel on any error
+            import logging
+            logging.getLogger(__name__).debug(f"Optimized MOE kernel not available: {e}")
+
     padded_size = padding_size
     if not (use_fp8_w8a8 or use_int8_w8a8) or block_shape is not None or _use_aiter:
         padded_size = 0

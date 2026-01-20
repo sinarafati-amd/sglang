@@ -10,10 +10,11 @@ import torch
 import triton
 
 from sglang.srt.server_args import get_global_server_args
-from sglang.srt.utils import get_device_name, is_hip
+from sglang.srt.utils import get_bool_env_var, get_device_name, is_hip
 
 logger = logging.getLogger(__name__)
 _is_hip = is_hip()
+_use_optimized_moe = get_bool_env_var("SGLANG_USE_OPTIMIZED_MOE") and _is_hip
 
 
 def get_config_file_name(
@@ -153,6 +154,19 @@ def get_default_config(
             "GROUP_SIZE_M": 8,
         }
         return config
+    
+    # Try to use optimized config if enabled on AMD GPUs
+    if _use_optimized_moe:
+        try:
+            from .optimized import get_optimized_config, use_optimized_moe_kernel
+            if use_optimized_moe_kernel():
+                optimized_config = get_optimized_config(M, E, N, K, dtype, block_shape)
+                if optimized_config:
+                    logger.debug(f"Using optimized MOE config for M={M}: {optimized_config}")
+                    return optimized_config
+        except ImportError:
+            pass
+    
     if dtype == "fp8_w8a8":
         if block_shape is None:
             config = {

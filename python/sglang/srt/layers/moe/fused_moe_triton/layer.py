@@ -84,8 +84,21 @@ _is_hip = is_hip()
 _is_cpu_amx_available = cpu_has_amx_support()
 _is_cpu = is_cpu()
 _use_aiter = get_bool_env_var("SGLANG_USE_AITER") and _is_hip
+_use_optimized_moe = get_bool_env_var("SGLANG_USE_OPTIMIZED_MOE") and _is_hip
 
 logger = logging.getLogger(__name__)
+
+# Log optimized MOE status on module load
+if _use_optimized_moe:
+    try:
+        from .optimized import get_gpu_arch, use_optimized_moe_kernel
+        if use_optimized_moe_kernel():
+            arch = get_gpu_arch()
+            logger.info(f"Optimized MOE kernel enabled for {arch}")
+        else:
+            logger.warning("SGLANG_USE_OPTIMIZED_MOE=1 but optimized kernel not available (unsupported GPU)")
+    except ImportError:
+        logger.warning("SGLANG_USE_OPTIMIZED_MOE=1 but optimized module not found")
 
 
 def create_moe_dispatcher(moe_runner_config: MoeRunnerConfig) -> BaseDispatcher:
