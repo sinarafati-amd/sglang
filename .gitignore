@@ -275,3 +275,10 @@ python/sglang/srt/layers/moe/fused_moe_triton/optimized/README.md
 python/sglang/srt/layers/moe/fused_moe_triton/optimized/SPEEDUP_SUMMARY.md
 GFX950_USER_GUIDE.md
 QUICK_REFERENCE_GFX950.txt
+
+# Testing and benchmarking files (kept locally, not in repo)
+python/sglang/srt/layers/moe/fused_moe_triton/optimized/benchmark_optimized.py
+python/sglang/srt/layers/moe/fused_moe_triton/optimized/standalone_test.py
+python/sglang/srt/layers/moe/fused_moe_triton/optimized/full_moe_test.py
+python/sglang/srt/layers/moe/fused_moe_triton/optimized/tests/
+python/sglang/srt/layers/moe/fused_moe_triton/optimized/verify_gfx950.sh
