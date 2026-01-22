@@ -40,16 +40,28 @@ def get_gpu_arch() -> str:
     if not _is_hip:
         return "unknown"
     
-    device_name = get_device_name()
-    if device_name is None:
-        return "unknown"
-    
-    # Check for MI300X/MI300A (gfx942)
-    if "MI300" in device_name or "gfx942" in device_name.lower():
-        return "gfx942"
-    # Check for MI350 (gfx950)
-    if "MI350" in device_name or "gfx950" in device_name.lower():
-        return "gfx950"
+    try:
+        import torch
+        if torch.cuda.device_count() > 0:
+            props = torch.cuda.get_device_properties(0)
+            # Use gcnArchName which is always populated on ROCm
+            if hasattr(props, 'gcnArchName'):
+                # gcnArchName format: "gfx942:sramecc+:xnack-"
+                arch = props.gcnArchName.split(':')[0]
+                if arch in ('gfx942', 'gfx950'):
+                    return arch
+            
+            # Fallback: check device name (may be empty string)
+            device_name = get_device_name()
+            if device_name:
+                # Check for MI300X/MI300A (gfx942)
+                if "MI300" in device_name or "gfx942" in device_name.lower():
+                    return "gfx942"
+                # Check for MI350 (gfx950)
+                if "MI350" in device_name or "gfx950" in device_name.lower():
+                    return "gfx950"
+    except Exception:
+        pass
     
     return "unknown"
 
